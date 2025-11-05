@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SHA-256 vs MD5: Collision Resistance & Performance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>SHA-256 vs MD5</h1>
+      <p>Collision resistance in practice and performance comparison in your browser.</p>
+    </header>
+
+    <main class="container">
+      <section class="card" id="hashing">
+        <h2>Real-time Hashing</h2>
+        <label for="inputText" class="label">Input</label>
+        <textarea id="inputText" class="input" rows="4" placeholder="Type or paste text..."></textarea>
+        <div class="hash-row">
+          <div class="hash-box">
+            <div class="hash-title">SHA-256</div>
+            <pre id="sha256Out" class="hash-output">–</pre>
+          </div>
+          <div class="hash-box">
+            <div class="hash-title">MD5</div>
+            <pre id="md5Out" class="hash-output">–</pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="performance">
+        <h2>Performance Benchmark</h2>
+        <p class="subtle">Measures hash throughput on your device (higher is faster).</p>
+        <div class="controls">
+          <label for="bufSize" class="label-inline">Buffer size (bytes)</label>
+          <input id="bufSize" class="input-inline" type="number" min="32" step="32" value="65536" />
+          <label for="durationMs" class="label-inline">Duration (ms)</label>
+          <input id="durationMs" class="input-inline" type="number" min="250" step="250" value="1500" />
+          <button id="runPerf" class="btn">Run Benchmark</button>
+        </div>
+        <div class="results-grid" id="perfResults">
+          <div class="result">
+            <div class="result-title">SHA-256</div>
+            <div id="perfSha256" class="result-value">–</div>
+          </div>
+          <div class="result">
+            <div class="result-title">MD5</div>
+            <div id="perfMd5" class="result-value">–</div>
+          </div>
+        </div>
+        <p class="note">Note: SHA-256 uses the browser's native crypto, while MD5 runs in JavaScript. This favors SHA-256 in this environment even though MD5 is a simpler algorithm.</p>
+      </section>
+
+      <section class="card" id="collision">
+        <h2>Collision Demo (N-bit prefix)</h2>
+        <p class="subtle">Find two different messages whose hashes share the same first N bits (birthday-style search).</p>
+        <div class="controls">
+          <label for="prefixBits" class="label-inline">Prefix bits (N)</label>
+          <input id="prefixBits" class="input-inline" type="number" min="8" max="28" step="1" value="20" />
+          <button id="startCollisionSha" class="btn">Start SHA-256</button>
+          <button id="startCollisionMd5" class="btn">Start MD5</button>
+          <button id="stopCollision" class="btn btn-secondary">Stop</button>
+        </div>
+        <div class="progress-row">
+          <div class="progress-box">
+            <div class="progress-title">SHA-256</div>
+            <div id="colShaStatus" class="status">Idle</div>
+            <pre id="colShaResult" class="hash-output small">–</pre>
+          </div>
+          <div class="progress-box">
+            <div class="progress-title">MD5</div>
+            <div id="colMd5Status" class="status">Idle</div>
+            <pre id="colMd5Result" class="hash-output small">–</pre>
+          </div>
+        </div>
+        <p class="note">Expected attempts grow as ~2^(N/2). As N increases, finding a collision becomes rapidly infeasible, reflecting SHA-256's strong collision resistance in practice.</p>
+      </section>
+
+      <section class="card" id="explain">
+        <h2>Why SHA-256 Resists Collisions</h2>
+        <ul>
+          <li><strong>Preimage and collision hardness</strong>: SHA-256 is designed so that finding two different inputs with the same 256-bit hash requires about 2^128 work (birthday bound), beyond practical computation.</li>
+          <li><strong>No known feasible attacks</strong>: As of today, there are no practical collision attacks for full SHA-256. In contrast, MD5 is broken: chosen-prefix collisions can be generated quickly on commodity hardware.</li>
+          <li><strong>Real-time systems</strong>: Systems avoid accepting user-controlled inputs as authoritative identifiers. They combine SHA-256 with domain separation (prefixes), salting/nonces, and protocol-level checks to mitigate any theoretical risk and prevent downgrade to weak hashes.</li>
+          <li><strong>Versioning and agility</strong>: Protocols use hash agility to migrate if weaknesses are found, and enforce strong hashes in signatures (e.g., TLS, package registries).</li>
+        </ul>
+        <p>MD5 is provided here only for comparison. It should not be used for security-sensitive purposes.</p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>Runs entirely in your browser. No data leaves your device.</span>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+  </html>
+
+
