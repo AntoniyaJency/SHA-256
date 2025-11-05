@@ -16,7 +16,7 @@
     </header>
 
     <main class="container">
-      <section class="card" id="hashing">
+      <section class="card card-large" id="hashing">
         <h2>Real-time Hashing</h2>
         <label for="inputText" class="label">Input</label>
         <textarea id="inputText" class="input" rows="4" placeholder="Type or paste text..."></textarea>
@@ -32,7 +32,7 @@
         </div>
       </section>
 
-      <section class="card" id="performance">
+      <section class="card card-large" id="performance">
         <h2>Performance Benchmark</h2>
         <p class="subtle">Measures hash throughput on your device (higher is faster).</p>
         <div class="controls">
@@ -52,8 +52,15 @@
             <div id="perfMd5" class="result-value">–</div>
           </div>
         </div>
+        <div class="perf-legend">
+          <div class="legend-item"><span class="dot dot-sha"></span> SHA-256</div>
+          <div class="legend-item"><span class="dot dot-md5"></span> MD5</div>
+          <div class="spacer"></div>
+          <div class="stat">SHA-256 avg: <span id="perfShaAvg">–</span></div>
+          <div class="stat">MD5 avg: <span id="perfMd5Avg">–</span></div>
+        </div>
         <div class="chart-wrap">
-          <canvas id="perfChart" width="800" height="220" aria-label="Performance comparison chart" role="img"></canvas>
+          <canvas id="perfChart" width="900" height="260" aria-label="Performance comparison chart" role="img"></canvas>
         </div>
         <p class="note">Note: SHA-256 uses the browser's native crypto, while MD5 runs in JavaScript. This favors SHA-256 in this environment even though MD5 is a simpler algorithm.</p>
       </section>

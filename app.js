@@ -185,8 +185,17 @@ runPerfBtn.addEventListener('click', async () => {
   const mdMBps = ((mdOps * size) / (1024 * 1024) / (duration / 1000)).toFixed(2);
   perfShaEl.textContent = `${shaOps} ops, ${shaMBps} MiB/s`;
   perfMd5El.textContent = `${mdOps} ops, ${mdMBps} MiB/s`;
-  // Draw comparison chart
-  drawPerfChart(parseFloat(shaMBps), parseFloat(mdMBps));
+  // Update history and draw analysis chart
+  const shaNum = parseFloat(shaMBps), mdNum = parseFloat(mdMBps);
+  perfHistory.push({ t: Date.now(), sha: shaNum, md: mdNum });
+  while (perfHistory.length > MAX_POINTS) perfHistory.shift();
+  drawPerfChartHistory(perfHistory);
+  // Rolling averages (last 5)
+  const recent = perfHistory.slice(-5);
+  const avgSha = recent.reduce((s, p) => s + p.sha, 0) / (recent.length || 1);
+  const avgMd = recent.reduce((s, p) => s + p.md, 0) / (recent.length || 1);
+  perfShaAvgEl.textContent = `${avgSha.toFixed(2)} MiB/s`;
+  perfMd5AvgEl.textContent = `${avgMd.toFixed(2)} MiB/s`;
 });
 
 // Collision demo via worker
@@ -323,36 +332,72 @@ stopBtn.addEventListener('click', () => { ensureWorker(); worker.postMessage({ a
 // Simple bar chart for performance
 const perfChartCanvas = document.getElementById('perfChart');
 const ctx = perfChartCanvas.getContext('2d');
-function drawPerfChart(shaMBps, mdMBps) {
+const perfShaAvgEl = document.getElementById('perfShaAvg');
+const perfMd5AvgEl = document.getElementById('perfMd5Avg');
+const perfHistory = []; // {t, sha, md}
+const MAX_POINTS = 20;
+
+function drawPerfChartHistory(history) {
   const w = perfChartCanvas.width;
   const h = perfChartCanvas.height;
   ctx.clearRect(0, 0, w, h);
-  // Axes
+  // Determine scales
+  const paddingLeft = 50;
+  const paddingRight = 20;
+  const paddingTop = 14;
+  const paddingBottom = 28;
+  const innerW = w - paddingLeft - paddingRight;
+  const innerH = h - paddingTop - paddingBottom;
+  const maxVal = Math.max(1, ...history.map(p => Math.max(p.sha, p.md)));
+
+  // Grid
   ctx.strokeStyle = '#203247';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(40, 10);
-  ctx.lineTo(40, h - 30);
-  ctx.lineTo(w - 10, h - 30);
+  ctx.rect(paddingLeft, paddingTop, innerW, innerH);
   ctx.stroke();
-  const maxVal = Math.max(shaMBps, mdMBps, 1);
-  const barWidth = 140;
-  const gap = 60;
-  const baseY = h - 30;
-  const scale = (h - 60) / maxVal;
-  // Bars
-  function bar(x, val, color, label){
-    const bh = val * scale;
-    ctx.fillStyle = color;
-    ctx.fillRect(x, baseY - bh, barWidth, bh);
-    ctx.fillStyle = '#e6edf3';
-    ctx.font = '12px Inter, sans-serif';
-    ctx.fillText(label, x, baseY + 16);
-    ctx.fillText(`${val.toFixed(2)} MiB/s`, x, baseY - bh - 6);
+  // Horizontal grid lines and labels
+  ctx.font = '11px Inter, sans-serif';
+  ctx.fillStyle = '#8aa0b6';
+  const ticks = 4;
+  for (let i = 0; i <= ticks; i++) {
+    const y = paddingTop + (innerH * i) / ticks;
+    const val = ((maxVal * (ticks - i)) / ticks).toFixed(0);
+    ctx.strokeStyle = '#1a2a3c';
+    ctx.beginPath();
+    ctx.moveTo(paddingLeft, y);
+    ctx.lineTo(paddingLeft + innerW, y);
+    ctx.stroke();
+    ctx.fillText(val, 10, y + 4);
   }
-  const startX = 70;
-  bar(startX, shaMBps, '#4aa3ff', 'SHA-256');
-  bar(startX + barWidth + gap, mdMBps, '#22c55e', 'MD5');
+
+  if (history.length === 0) return;
+  // X scale function
+  const stepX = innerW / Math.max(1, history.length - 1);
+  function xAt(i) { return paddingLeft + i * stepX; }
+  function yAt(v) { return paddingTop + innerH - (v / maxVal) * innerH; }
+
+  // Line drawer
+  function drawLine(color, accessor) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    history.forEach((p, i) => {
+      const x = xAt(i);
+      const y = yAt(accessor(p));
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    // Last point marker
+    const last = history[history.length - 1];
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(xAt(history.length - 1), yAt(accessor(last)), 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  drawLine('#4aa3ff', p => p.sha);
+  drawLine('#22c55e', p => p.md);
 }
 
 
