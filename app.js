@@ -127,6 +127,22 @@ function randomString(len) {
   return s;
 }
 
+function buildRepeatedStringFromInput(input, size) {
+  if (!input) return '';
+  let out = '';
+  while (out.length < size) out += input;
+  return out.slice(0, size);
+}
+
+function buildRepeatedBytesFromInput(input, size) {
+  if (!input) return new Uint8Array(0);
+  const enc = new TextEncoder();
+  const chunk = enc.encode(input);
+  const out = new Uint8Array(size);
+  for (let i = 0; i < size; i++) out[i] = chunk[i % chunk.length];
+  return out;
+}
+
 async function benchSha256(bytes, durationMs) {
   const end = performance.now() + durationMs;
   let ops = 0;
@@ -150,11 +166,17 @@ function benchMd5(str, durationMs) {
 runPerfBtn.addEventListener('click', async () => {
   const size = Math.max(32, parseInt(bufSizeEl.value || '65536', 10));
   const duration = Math.max(250, parseInt(durationEl.value || '1500', 10));
+  const userInput = inputEl.value || '';
+  if (!userInput) {
+    perfShaEl.textContent = 'Enter input text above';
+    perfMd5El.textContent = 'Enter input text above';
+    drawPerfChart(0, 0);
+    return;
+  }
   perfShaEl.textContent = 'Running...';
   perfMd5El.textContent = 'Running...';
-  const rand = new Uint8Array(size);
-  crypto.getRandomValues(rand);
-  const str = randomString(size);
+  const rand = buildRepeatedBytesFromInput(userInput, size);
+  const str = buildRepeatedStringFromInput(userInput, size);
   const [shaOps, mdOps] = await Promise.all([
     benchSha256(rand, duration),
     Promise.resolve(benchMd5(str, duration))
@@ -277,7 +299,13 @@ function ensureWorker() {
 function startAlgo(algo) {
   ensureWorker();
   const bits = Math.max(8, Math.min(28, parseInt(bitsEl.value || '20', 10)));
-  const base = 'demo:' + new Date().toISOString() + ':';
+  const inputBase = inputEl.value || '';
+  if (!inputBase) {
+    if (algo === 'SHA-256') shaStatus.textContent = 'Enter input text above';
+    else mdStatus.textContent = 'Enter input text above';
+    return;
+  }
+  const base = inputBase + ':';
   if (algo === 'SHA-256') {
     shaStatus.textContent = 'Searching...';
     shaRes.textContent = '–';
