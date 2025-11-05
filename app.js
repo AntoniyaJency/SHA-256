@@ -181,13 +181,12 @@ runPerfBtn.addEventListener('click', async () => {
     benchSha256(rand, duration),
     Promise.resolve(benchMd5(str, duration))
   ]);
-  const shaMBps = ((shaOps * size) / (1024 * 1024) / (duration / 1000)).toFixed(2);
-  const mdMBps = ((mdOps * size) / (1024 * 1024) / (duration / 1000)).toFixed(2);
-  perfShaEl.textContent = `${shaOps} ops, ${shaMBps} MiB/s`;
-  perfMd5El.textContent = `${mdOps} ops, ${mdMBps} MiB/s`;
-  // Update history and draw analysis chart
-  const shaNum = parseFloat(shaMBps), mdNum = parseFloat(mdMBps);
-  perfHistory.push({ t: Date.now(), sha: shaNum, md: mdNum });
+  const shaMBps = (shaOps * size) / (1024 * 1024) / (duration / 1000);
+  const mdMBps = (mdOps * size) / (1024 * 1024) / (duration / 1000);
+  perfShaEl.textContent = `${shaOps} ops, ${shaMBps.toFixed(2)} MiB/s`;
+  perfMd5El.textContent = `${mdOps} ops, ${mdMBps.toFixed(2)} MiB/s`;
+  // Update history with full precision and draw analysis chart
+  perfHistory.push({ t: Date.now(), sha: shaMBps, md: mdMBps });
   while (perfHistory.length > MAX_POINTS) perfHistory.shift();
   drawPerfChartHistory(perfHistory);
   // Rolling averages (last 5)
