@@ -62,6 +62,19 @@
         <div class="chart-wrap">
           <canvas id="perfChart" width="900" height="260" aria-label="Performance comparison chart" role="img"></canvas>
         </div>
+        <div class="series-controls">
+          <div class="series-row">
+            <button id="runSeries" class="btn">Run Series</button>
+            <label class="series-label">Preset sizes:</label>
+            <span class="series-sizes">4 KiB, 16 KiB, 64 KiB, 256 KiB, 1 MiB</span>
+            <label class="series-label">Each duration (ms)</label>
+            <input id="seriesDuration" class="input-inline" type="number" min="250" step="250" value="750" />
+            <label class="series-label"><input id="seriesLogScale" type="checkbox" /> Log scale</label>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="seriesChart" width="900" height="280" aria-label="Size sweep performance chart" role="img"></canvas>
+        </div>
         <p class="note">Note: SHA-256 uses the browser's native crypto, while MD5 runs in JavaScript. This favors SHA-256 in this environment even though MD5 is a simpler algorithm.</p>
       </section>
 

@@ -102,6 +102,11 @@ body {
 
 .chart-wrap { margin-top: 12px; background: #0b1119; border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
 
+.series-controls { margin-top: 12px; }
+.series-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.series-label { color: var(--muted); }
+.series-sizes { color: var(--text); background: #0b1119; border: 1px solid var(--border); padding: 6px 10px; border-radius: 8px; }
+
 .note { color: var(--muted); margin-top: 10px; font-size: 13px; }
 
 .progress-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }

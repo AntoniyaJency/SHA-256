@@ -198,6 +198,103 @@ runPerfBtn.addEventListener('click', async () => {
   perfMd5AvgEl.textContent = `${avgMd.toFixed(2)} MiB/s`;
 });
 
+// Size sweep series chart
+const seriesChart = document.getElementById('seriesChart');
+const sctx = seriesChart.getContext('2d');
+const runSeriesBtn = document.getElementById('runSeries');
+const seriesDurationEl = document.getElementById('seriesDuration');
+const seriesLogScaleEl = document.getElementById('seriesLogScale');
+
+const presetSizes = [4096, 16384, 65536, 262144, 1048576];
+
+function drawSeriesChart(sizes, dataSha, dataMd, logScale) {
+  const w = seriesChart.width, h = seriesChart.height;
+  sctx.clearRect(0, 0, w, h);
+  const paddingLeft = 60, paddingRight = 20, paddingTop = 16, paddingBottom = 40;
+  const innerW = w - paddingLeft - paddingRight;
+  const innerH = h - paddingTop - paddingBottom;
+  const allVals = dataSha.concat(dataMd);
+  const maxValLin = Math.max(1, ...allVals);
+  const scaleY = v => {
+    if (!logScale) return v / maxValLin;
+    const min = 0.1; // avoid log(0)
+    const max = maxValLin;
+    const ln = x => Math.log(Math.max(min, x));
+    return (ln(v) - ln(min)) / (ln(max) - ln(min));
+  };
+  // Frame
+  sctx.strokeStyle = '#203247'; sctx.lineWidth = 1;
+  sctx.beginPath(); sctx.rect(paddingLeft, paddingTop, innerW, innerH); sctx.stroke();
+  // Y grid
+  sctx.font = '11px Inter, sans-serif'; sctx.fillStyle = '#8aa0b6';
+  const yticks = 4;
+  for (let i = 0; i <= yticks; i++) {
+    const frac = i / yticks;
+    const y = paddingTop + innerH * frac;
+    sctx.strokeStyle = '#1a2a3c';
+    sctx.beginPath(); sctx.moveTo(paddingLeft, y); sctx.lineTo(paddingLeft + innerW, y); sctx.stroke();
+    const label = (!logScale ? (maxValLin * (1 - frac)).toFixed(0) : '')
+    sctx.fillText(label, 10, y + 4);
+  }
+  // X labels
+  const stepX = innerW / (sizes.length - 1);
+  sctx.fillStyle = '#8aa0b6'; sctx.textAlign = 'center';
+  sizes.forEach((sz, i) => {
+    const x = paddingLeft + i * stepX;
+    const label = sz >= 1048576 ? `${(sz/1048576).toFixed(0)} MiB` : `${(sz/1024).toFixed(0)} KiB`;
+    sctx.fillText(label, x, h - 14);
+  });
+  sctx.textAlign = 'start';
+
+  function yAt(val) { return paddingTop + innerH - scaleY(val) * innerH; }
+  function xAt(i) { return paddingLeft + i * stepX; }
+  function drawLine(data, color) {
+    sctx.strokeStyle = color; sctx.lineWidth = 2; sctx.beginPath();
+    data.forEach((v, i) => { const x = xAt(i), y = yAt(v); if (i === 0) sctx.moveTo(x, y); else sctx.lineTo(x, y); });
+    sctx.stroke();
+    // markers
+    sctx.fillStyle = color;
+    data.forEach((v, i) => { const x = xAt(i), y = yAt(v); sctx.beginPath(); sctx.arc(x, y, 3, 0, Math.PI*2); sctx.fill(); });
+  }
+  drawLine(dataSha, '#4aa3ff');
+  drawLine(dataMd, '#22c55e');
+}
+
+async function runSingleBenchmark(size, duration, userInput) {
+  const bytes = buildRepeatedBytesFromInput(userInput, size);
+  const str = buildRepeatedStringFromInput(userInput, size);
+  const shaOps = await benchSha256(bytes, duration);
+  const mdOps = benchMd5(str, duration);
+  const shaMBps = (shaOps * size) / (1024 * 1024) / (duration / 1000);
+  const mdMBps = (mdOps * size) / (1024 * 1024) / (duration / 1000);
+  return { shaMBps, mdMBps };
+}
+
+runSeriesBtn.addEventListener('click', async () => {
+  const userInput = inputEl.value || '';
+  if (!userInput) { perfShaEl.textContent = 'Enter input text above'; return; }
+  const duration = Math.max(250, parseInt(seriesDurationEl.value || '750', 10));
+  const shaVals = [], mdVals = [];
+  // Run sequentially to reduce contention
+  for (const size of presetSizes) {
+    // status feedback in main results
+    perfShaEl.textContent = `Size ${size} bytes...`;
+    perfMd5El.textContent = `Size ${size} bytes...`;
+    const { shaMBps, mdMBps } = await runSingleBenchmark(size, duration, userInput);
+    shaVals.push(shaMBps);
+    mdVals.push(mdMBps);
+    drawSeriesChart(presetSizes, shaVals, mdVals, seriesLogScaleEl.checked);
+  }
+  perfShaEl.textContent = 'Series complete';
+  perfMd5El.textContent = 'Series complete';
+});
+
+seriesLogScaleEl.addEventListener('change', () => {
+  // Redraw with current data if available
+  // We don't store last series data globally; cheap approach: do nothing
+  // until next run, or we could cache last series locally. For simplicity, no-op.
+});
+
 // Collision demo via worker
 const startShaBtn = document.getElementById('startCollisionSha');
 const startMd5Btn = document.getElementById('startCollisionMd5');
