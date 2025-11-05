@@ -91,6 +91,8 @@ body {
 .result-title { color: var(--muted); margin-bottom: 8px; }
 .result-value { font-size: 18px; font-weight: 700; }
 
+.chart-wrap { margin-top: 14px; background: #0b1119; border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+
 .note { color: var(--muted); margin-top: 10px; font-size: 13px; }
 
 .progress-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
